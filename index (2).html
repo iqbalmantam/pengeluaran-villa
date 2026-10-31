@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pengeluaran Villa Puncak</title>
+<style>
+  :root{
+    --bg:#f4f6f5; --card:#fff; --text:#1c2b25; --muted:#6b7a73; --line:#e3e8e5;
+    --green:#1f7a52; --green-soft:#e3f3ec; --amber:#d98a00; --red:#c93c3c; --red-soft:#fbe9e9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{max-width:960px;margin:0 auto;padding:16px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  h1{font-size:1.25rem;margin:0}
+  .sub{color:var(--muted);font-size:.85rem}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600}
+  .badge.view{background:#eceff1;color:#546e7a}
+  .badge.admin{background:var(--green-soft);color:var(--green)}
+  .badge.demo{background:#fff3cd;color:#8a6100}
+  button,.btn{font:inherit;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--green);color:#fff;font-weight:600}
+  button.ghost{background:#fff;color:var(--text);border:1px solid var(--line)}
+  button.danger{background:var(--red-soft);color:var(--red)}
+  button.small{padding:5px 9px;font-size:.8rem}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .grid{display:grid;gap:10px}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .stat .lbl{font-size:.75rem;color:var(--muted)}
+  .stat .val{font-size:1.05rem;font-weight:700;margin-top:2px}
+  .stat .val.neg{color:var(--red)}
+  .bar{height:14px;background:#e9eeeb;border-radius:999px;overflow:hidden;margin-top:12px}
+  .bar>div{height:100%;background:var(--green);transition:width .4s}
+  .bar>div.warn{background:var(--amber)} .bar>div.over{background:var(--red)}
+  .pct{font-size:.8rem;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between}
+  h2{font-size:1rem;margin:0 0 10px}
+  form{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  form .full{grid-column:1/-1} form .c2{grid-column:span 2}
+  label{font-size:.75rem;color:var(--muted);display:block;margin-bottom:3px}
+  input,select{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  input:focus,select:focus{outline:2px solid var(--green-soft);border-color:var(--green)}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .row{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:.85rem}
+  .row .name{width:105px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .track{flex:1;height:8px;background:#e9eeeb;border-radius:99px;overflow:hidden}
+  .row .track>div{height:100%;background:var(--green)}
+  .row .amt{width:96px;text-align:right;flex:none;font-variant-numeric:tabular-nums}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .tools input{flex:1;min-width:140px} .tools select{width:auto}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tag{background:var(--green-soft);color:var(--green);padding:2px 8px;border-radius:999px;font-size:.74rem;white-space:nowrap}
+  .empty{text-align:center;color:var(--muted);padding:22px 0}
+  .acts{white-space:nowrap}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1c2b25;color:#fff;padding:10px 16px;border-radius:10px;font-size:.88rem;opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+  .toast.show{opacity:1} .toast.err{background:var(--red)}
+  dialog{border:0;border-radius:14px;padding:18px;max-width:340px;width:92%}
+  dialog::backdrop{background:rgba(0,0,0,.4)}
+  .hide{display:none!important}
+  .tabhide{display:none!important}
+  .tabs{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto}
+  .tab{flex:1;white-space:nowrap;background:#fff;color:var(--text);border:1px solid var(--line)}
+  .tab.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .barlbl{font-size:.75rem;color:var(--muted);margin-top:12px}
+  .barlbl + .bar{margin-top:5px}
+  .bar.in>div{background:#2b6cb0}
+  .alert{margin-top:12px;padding:9px 12px;border-radius:8px;background:var(--red-soft);color:var(--red);font-size:.85rem}
+  .alert.info{background:#eef4fb;color:#2b6cb0}
+  /* efek loading */
+  .topbar{position:fixed;top:0;left:0;right:0;height:3px;z-index:30;overflow:hidden;opacity:0;transition:opacity .2s;pointer-events:none}
+  .topbar::before{content:"";position:absolute;top:0;bottom:0;width:40%;background:var(--green);border-radius:99px;animation:slide 1.1s ease-in-out infinite}
+  body.loading .topbar{opacity:1}
+  @keyframes slide{0%{left:-40%}100%{left:100%}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  body.loading .stat .val,body.loading .pct,body.loading .row,body.loading #tbody td,body.loading #tbodyIn td{animation:pulse 1.1s ease-in-out infinite}
+  body.loading #btnRefresh{opacity:.6;pointer-events:none}
+  @media(max-width:720px){
+    .stats{grid-template-columns:1fr 1fr} .split{grid-template-columns:1fr}
+    form{grid-template-columns:1fr 1fr} form .c2{grid-column:span 2}
+    .hide-m{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="topbar" id="topbar"></div>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>🏡 Pengeluaran Villa Puncak</h1>
+      <div class="sub">Pencatatan biaya trip tim · Berangkat Sabtu, 7 November 2026 · <span id="modeBadge" class="badge view">Mode lihat</span></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="ghost small" id="btnRefresh" title="Muat ulang data">⟳ Refresh</button>
+      <button class="ghost small" id="btnCsv">⬇ CSV</button>
+      <button class="small" id="btnLogin">🔒 Masuk sebagai pencatat</button>
+    </div>
+  </header>
+
+  <!-- Ringkasan -->
+  <section class="card">
+    <div class="grid stats">
+      <div class="stat"><div class="lbl">Budget <button class="ghost small admin-only hide" id="btnBudget" style="padding:1px 6px">ubah</button></div><div class="val" id="sBudget">-</div></div>
+      <div class="stat"><div class="lbl">Terkumpul (uang masuk)</div><div class="val" id="sIn">-</div></div>
+      <div class="stat"><div class="lbl">Belum terkumpul</div><div class="val" id="sGap">-</div></div>
+      <div class="stat"><div class="lbl">Terpakai</div><div class="val" id="sSpent">-</div></div>
+      <div class="stat"><div class="lbl">Sisa budget</div><div class="val" id="sLeft">-</div></div>
+      <div class="stat"><div class="lbl">Saldo kas (uang di tangan)</div><div class="val" id="sCash">-</div></div>
+    </div>
+    <div class="barlbl">Dana terkumpul dari target</div>
+    <div class="bar in"><div id="barIn" style="width:0"></div></div>
+    <div class="pct"><span id="inTxt">0%</span><span id="cntIn">0 setoran</span></div>
+    <div class="barlbl">Pengeluaran dari budget</div>
+    <div class="bar"><div id="bar" style="width:0"></div></div>
+    <div class="pct"><span id="pctTxt">0% terpakai</span><span id="cntTxt">0 transaksi</span></div>
+    <div class="alert info hide" id="cashAlert"></div>
+  </section>
+
+  <!-- Menu tab -->
+  <nav class="tabs" id="tabs">
+    <button class="tab" data-t="rekap">📊 Rekap</button>
+    <button class="tab" data-t="in">💰 Pemasukan</button>
+    <button class="tab" data-t="out">🧾 Pengeluaran</button>
+  </nav>
+
+  <!-- Form input (hanya admin) -->
+  <section class="card admin-only hide" data-tab="out" id="formCard">
+    <h2 id="formTitle">Tambah pengeluaran</h2>
+    <form id="form" autocomplete="off">
+      <div class="c2"><label>Tanggal</label><input type="date" id="fTanggal" required></div>
+      <div class="c2"><label>Kategori</label>
+        <select id="fKategori" required></select></div>
+      <div class="c2"><label>Jumlah (Rp)</label><input type="text" inputmode="numeric" id="fJumlah" placeholder="0" required></div>
+      <div class="c2"><label>Keterangan</label><input type="text" id="fKet" placeholder="mis. DP sewa villa" required></div>
+      <div class="c2"><label>Dibayar oleh</label><input type="text" id="fPembayar" list="listPembayar" placeholder="Nama" required>
+        <datalist id="listPembayar"></datalist></div>
+      <div class="c2" style="display:flex;gap:8px;align-items:end">
+        <button type="submit" id="btnSave" style="flex:1">Simpan</button>
+        <button type="button" class="ghost" id="btnCancel">Batal</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Pemasukan -->
+  <section class="card admin-only hide" data-tab="in" id="iFormCard">
+    <h2 id="iFormTitle">Catat uang masuk</h2>
+    <form id="iForm" autocomplete="off">
+      <div class="c2"><label>Tanggal</label><input type="date" id="iTanggal" required></div>
+      <div class="c2"><label>Nama penyetor</label><input type="text" id="iNama" list="listNama" placeholder="Nama" required>
+        <datalist id="listNama"></datalist></div>
+      <div class="c2"><label>Jumlah (Rp)</label><input type="text" inputmode="numeric" id="iJumlah" placeholder="0" required></div>
+      <div class="c2"><label>Keterangan (opsional)</label><input type="text" id="iKet" placeholder="mis. iuran tahap 1"></div>
+      <div class="c2" style="display:flex;gap:8px;align-items:end">
+        <button type="submit" id="iBtnSave" style="flex:1">Simpan</button>
+        <button type="button" class="ghost" id="iBtnCancel">Batal</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" data-tab="in">
+    <h2>Daftar uang masuk</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Tanggal</th><th>Nama</th><th class="hide-m">Keterangan</th>
+          <th class="num">Jumlah</th><th class="admin-only hide"></th>
+        </tr></thead>
+        <tbody id="tbodyIn"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Rekap -->
+  <section class="split" data-tab="rekap">
+    <div class="card"><h2>Per kategori</h2><div id="byCat"></div></div>
+    <div class="card"><h2>Per pembayar</h2><div id="byPayer"></div></div>
+    <div class="card" style="grid-column:1/-1"><h2>Per penyetor (uang masuk)</h2><div id="byContrib"></div></div>
+  </section>
+
+  <!-- Tabel -->
+  <section class="card" data-tab="out">
+    <h2>Daftar transaksi</h2>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Cari keterangan / pembayar…">
+      <select id="fCat"><option value="">Semua kategori</option></select>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Tanggal</th><th>Keterangan</th><th class="hide-m">Kategori</th><th class="hide-m">Pembayar</th>
+          <th class="num">Jumlah</th><th class="admin-only hide"></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- Dialog login -->
+<dialog id="dlgLogin">
+  <form method="dialog" id="loginForm" style="display:block">
+    <h2>Masuk sebagai pencatat</h2>
+    <label>Password</label>
+    <input type="password" id="pw" autocomplete="current-password" required>
+    <div id="loginErr" style="color:var(--red);font-size:.8rem;margin-top:6px;min-height:1em"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+      <button type="button" class="ghost" id="loginCancel">Batal</button>
+      <button type="submit" id="loginOk">Masuk</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================
+   PENGATURAN — isi URL Web App dari Google Apps Script.
+   Kosongkan untuk mode DEMO (data hanya di browser ini,
+   password demo: admin).
+   ===================================================== */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzb2RTvWPvERIeBMLYRYATAEadcNaWQTizc8Y6dia5xV91758OLftqTeSTYyerlJByDIg/exec';
+
+const KATEGORI = ['Villa / Penginapan','Transportasi','Makan & Minum','BBQ / Belanja','Aktivitas','Tiket / Parkir','Lain-lain'];
+
+/* ---------- State ---------- */
+const DEMO = !SCRIPT_URL;
+let state = { budget: 15000000, peserta: 0, items: [], incomes: [] };
+let adminPw = sessionStorage.getItem('vp_pw') || '';
+let editId = null;
+
+const $ = id => document.getElementById(id);
+const rp = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const isAdmin = () => !!adminPw;
+
+function toast(msg, err){
+  const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toast._t); toast._t = setTimeout(()=> t.className = 'toast', 2600);
+}
+
+/* ---------- API ---------- */
+async function apiLoad(){
+  document.body.classList.add('loading');
+  try{ await apiLoadRaw(); }
+  finally{ document.body.classList.remove('loading'); }
+}
+async function apiLoadRaw(){
+  if (DEMO){
+    const d = JSON.parse(localStorage.getItem('vp_demo') || 'null');
+    if (d) state = { peserta: 0, incomes: [], ...d };
+    return;
+  }
+  const r = await fetch(SCRIPT_URL, { cache:'no-store' });
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.error || 'Gagal memuat');
+  state = { budget: d.budget, peserta: d.peserta || 0, items: d.items, incomes: d.incomes || [] };
+  try{ localStorage.setItem('vp_cache', JSON.stringify(state)); }catch(e){}
+}
+
+async function apiWrite(payload){
+  if (DEMO){
+    if (adminPw !== 'admin') throw new Error('Password salah');
+    const it = payload.item;
+    if (payload.action === 'add') state.items.push({ ...it, id: Math.random().toString(36).slice(2,10) });
+    else if (payload.action === 'update') state.items = state.items.map(x => x.id === it.id ? it : x);
+    else if (payload.action === 'delete') state.items = state.items.filter(x => x.id !== payload.id);
+    else if (payload.action === 'setBudget') state.budget = Number(payload.budget);
+    else if (payload.action === 'addIncome') state.incomes.push({ ...it, id: Math.random().toString(36).slice(2,10) });
+    else if (payload.action === 'updateIncome') state.incomes = state.incomes.map(x => x.id === it.id ? it : x);
+    else if (payload.action === 'deleteIncome') state.incomes = state.incomes.filter(x => x.id !== payload.id);
+    else if (payload.action === 'setPeserta') state.peserta = Number(payload.peserta);
+    localStorage.setItem('vp_demo', JSON.stringify(state));
+    return { ok:true };
+  }
+  // text/plain agar tidak memicu CORS preflight di Apps Script
+  const r = await fetch(SCRIPT_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+    body: JSON.stringify({ ...payload, password: adminPw })
+  });
+  const d = await r.json();
+  if (!d.ok){
+    if (d.error === 'Password salah') logout(true);
+    throw new Error(d.error || 'Gagal menyimpan');
+  }
+  return d;
+}
+
+/* ---------- Render ---------- */
+function render(){
+  const items = state.items;
+  const spent = items.reduce((s,x)=> s + x.jumlah, 0);
+  const left = state.budget - spent;
+  const pct = state.budget > 0 ? spent / state.budget * 100 : 0;
+
+  $('sBudget').textContent = rp(state.budget);
+  $('sSpent').textContent = rp(spent);
+  $('sLeft').textContent = rp(left);
+  $('sLeft').className = 'val' + (left < 0 ? ' neg' : '');
+  const bar = $('bar');
+  bar.style.width = Math.min(pct,100) + '%';
+  bar.className = pct > 100 ? 'over' : pct >= 80 ? 'warn' : '';
+  $('pctTxt').textContent = pct.toFixed(1) + '% dari budget terpakai' + (left < 0 ? ' — MELEBIHI budget' : '');
+  $('cntTxt').textContent = items.length + ' transaksi';
+
+  // uang masuk / saldo kas
+  const inc = state.incomes || [];
+  const got = inc.reduce((s,x)=> s + x.jumlah, 0);
+  const gap = Math.max(state.budget - got, 0);
+  const cash = got - spent;
+  const pctIn = state.budget > 0 ? got / state.budget * 100 : 0;
+  $('sIn').textContent = rp(got);
+  $('sGap').textContent = rp(gap);
+  $('sCash').textContent = rp(cash);
+  $('sCash').className = 'val' + (cash < 0 ? ' neg' : '');
+  $('barIn').style.width = Math.min(pctIn,100) + '%';
+  $('inTxt').textContent = pctIn.toFixed(1) + '% dari target terkumpul';
+  $('cntIn').textContent = inc.length + ' setoran';
+  const al = $('cashAlert');
+  if (cash < 0){ al.className = 'alert'; al.textContent = 'Pengeluaran sudah melebihi dana terkumpul — kas kurang ' + rp(-cash) + '.'; }
+  else if (gap > 0){ al.className = 'alert info'; al.textContent = 'Masih perlu terkumpul ' + rp(gap) + ' lagi untuk mencapai target ' + rp(state.budget) + '.'; }
+  else { al.className = 'alert info'; al.textContent = 'Target dana sudah tercapai ✓'; }
+  breakdown('byContrib', groupSum(inc, 'nama'), got);
+  $('listNama').innerHTML = [...new Set(inc.map(x=>x.nama))].map(p=>`<option value="${esc(p)}">`).join('');
+  renderIncomeTable();
+
+  breakdown('byCat', groupSum(items, 'kategori'), spent);
+  breakdown('byPayer', groupSum(items, 'pembayar'), spent);
+
+  // dropdown kategori form + filter
+  const cats = [...new Set([...KATEGORI, ...items.map(x=>x.kategori)])];
+  const cur = $('fKategori').value, curF = $('fCat').value;
+  $('fKategori').innerHTML = cats.map(c=>`<option>${esc(c)}</option>`).join('');
+  if (cur) $('fKategori').value = cur;
+  $('fCat').innerHTML = '<option value="">Semua kategori</option>' + cats.map(c=>`<option>${esc(c)}</option>`).join('');
+  $('fCat').value = curF;
+  $('listPembayar').innerHTML = [...new Set(items.map(x=>x.pembayar))].map(p=>`<option value="${esc(p)}">`).join('');
+
+  renderTable();
+  applyMode();
+}
+
+function groupSum(items, key){
+  const m = {};
+  items.forEach(x => m[x[key]] = (m[x[key]] || 0) + x.jumlah);
+  return Object.entries(m).sort((a,b)=> b[1]-a[1]);
+}
+function breakdown(id, rows, total){
+  $(id).innerHTML = rows.length ? rows.map(([k,v]) => `
+    <div class="row"><span class="name" title="${esc(k)}">${esc(k)}</span>
+      <span class="track"><div style="width:${total? v/total*100 : 0}%"></div></span>
+      <span class="amt">${rp(v)}</span></div>`).join('') : '<div class="sub">Belum ada data</div>';
+}
+
+function renderTable(){
+  const q = $('q').value.toLowerCase(), cat = $('fCat').value;
+  const rows = state.items
+    .filter(x => (!cat || x.kategori === cat) && (!q || (x.keterangan + ' ' + x.pembayar).toLowerCase().includes(q)))
+    .sort((a,b)=> b.tanggal.localeCompare(a.tanggal));
+  $('tbody').innerHTML = rows.length ? rows.map(x => `
+    <tr>
+      <td>${esc(fmtDate(x.tanggal))}</td>
+      <td>${esc(x.keterangan)}<div class="sub" style="display:none"></div></td>
+      <td class="hide-m"><span class="tag">${esc(x.kategori)}</span></td>
+      <td class="hide-m">${esc(x.pembayar)}</td>
+      <td class="num">${rp(x.jumlah)}</td>
+      <td class="admin-only acts ${isAdmin() ? '' : 'hide'}">
+        <button class="ghost small" data-edit="${esc(x.id)}">✎</button>
+        <button class="danger small" data-del="${esc(x.id)}">🗑</button>
+      </td>
+    </tr>`).join('')
+    : `<tr><td colspan="6" class="empty">Belum ada transaksi.</td></tr>`;
+}
+function fmtDate(s){
+  const [y,m,d] = s.split('-'); if (!y||!m||!d) return s;
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+function applyMode(){
+  document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hide', !isAdmin()));
+  const b = $('modeBadge');
+  b.className = 'badge ' + (isAdmin() ? 'admin' : 'view');
+  b.textContent = isAdmin() ? 'Mode pencatat' : 'Mode lihat';
+  if (DEMO){ b.className = 'badge demo'; b.textContent += ' · DEMO'; }
+  $('btnLogin').textContent = isAdmin() ? 'Keluar' : '🔒 Masuk sebagai pencatat';
+  $('btnLogin').className = isAdmin() ? 'ghost small' : 'small';
+}
+
+/* ---------- Login ---------- */
+$('btnLogin').onclick = () => {
+  if (isAdmin()) return logout();
+  $('pw').value = ''; $('loginErr').textContent = ''; $('dlgLogin').showModal(); $('pw').focus();
+};
+$('loginCancel').onclick = () => $('dlgLogin').close();
+$('loginForm').onsubmit = async e => {
+  e.preventDefault();
+  const pw = $('pw').value;
+  $('loginOk').disabled = true;
+  try{
+    adminPw = pw;
+    if (DEMO){ if (pw !== 'admin') throw new Error('Password salah'); }
+    else await apiWrite({ action:'verify' });
+    sessionStorage.setItem('vp_pw', pw);
+    $('dlgLogin').close(); render(); toast('Berhasil masuk');
+  }catch(err){
+    adminPw = ''; sessionStorage.removeItem('vp_pw');
+    $('loginErr').textContent = err.message;
+  }finally{ $('loginOk').disabled = false; }
+};
+function logout(forced){
+  adminPw = ''; sessionStorage.removeItem('vp_pw'); resetForm(); render();
+  if (forced) toast('Sesi berakhir, silakan masuk lagi', true);
+}
+
+/* ---------- Form ---------- */
+$('fJumlah').addEventListener('input', e => {
+  const n = e.target.value.replace(/\D/g,'');
+  e.target.value = n ? Number(n).toLocaleString('id-ID') : '';
+});
+function resetForm(){
+  editId = null; $('form').reset(); $('fTanggal').value = new Date().toISOString().slice(0,10);
+  $('formTitle').textContent = 'Tambah pengeluaran'; $('btnSave').textContent = 'Simpan';
+}
+$('btnCancel').onclick = resetForm;
+
+$('form').onsubmit = async e => {
+  e.preventDefault();
+  const item = {
+    id: editId,
+    tanggal: $('fTanggal').value,
+    kategori: $('fKategori').value,
+    keterangan: $('fKet').value.trim(),
+    jumlah: Number($('fJumlah').value.replace(/\D/g,'')),
+    pembayar: $('fPembayar').value.trim()
+  };
+  if (!item.jumlah) return toast('Jumlah harus diisi', true);
+  $('btnSave').disabled = true;
+  try{
+    await apiWrite({ action: editId ? 'update' : 'add', item });
+    await apiLoad(); resetForm(); render(); toast('Tersimpan ✓');
+  }catch(err){ toast(err.message, true); }
+  finally{ $('btnSave').disabled = false; }
+};
+
+/* ---------- Tabel: edit / hapus ---------- */
+$('tbody').onclick = async e => {
+  const ed = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+  if (ed){
+    const x = state.items.find(i => i.id === ed.dataset.edit); if (!x) return;
+    editId = x.id;
+    $('fTanggal').value = x.tanggal; $('fKategori').value = x.kategori; $('fKet').value = x.keterangan;
+    $('fJumlah').value = x.jumlah.toLocaleString('id-ID'); $('fPembayar').value = x.pembayar;
+    $('formTitle').textContent = 'Edit pengeluaran'; $('btnSave').textContent = 'Update';
+    $('formCard').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+  if (del){
+    const x = state.items.find(i => i.id === del.dataset.del); if (!x) return;
+    if (!confirm(`Hapus "${x.keterangan}" (${rp(x.jumlah)})?`)) return;
+    try{ await apiWrite({ action:'delete', id:x.id }); await apiLoad(); render(); toast('Dihapus'); }
+    catch(err){ toast(err.message, true); }
+  }
+};
+
+/* ---------- Budget ---------- */
+$('btnBudget').onclick = async () => {
+  const v = prompt('Budget baru (Rp):', state.budget);
+  if (v === null) return;
+  const n = Number(String(v).replace(/\D/g,''));
+  if (!n) return toast('Angka tidak valid', true);
+  try{ await apiWrite({ action:'setBudget', budget:n }); await apiLoad(); render(); toast('Budget diperbarui'); }
+  catch(err){ toast(err.message, true); }
+};
+
+/* ---------- Lain-lain ---------- */
+$('q').oninput = renderTable; $('fCat').onchange = renderTable;
+$('btnRefresh').onclick = async () => { try{ await apiLoad(); render(); toast('Data diperbarui'); }catch(e){ toast(e.message,true); } };
+$('btnCsv').onclick = () => {
+  const head = ['Tanggal','Kategori','Keterangan','Jumlah','Dibayar Oleh'];
+  const q = v => '"' + String(v).replace(/"/g,'""') + '"';
+  const lines = [head.join(',')].concat(state.items.map(x => [x.tanggal,x.kategori,x.keterangan,x.jumlah,x.pembayar].map(q).join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\n')], { type:'text/csv' }));
+  a.download = 'pengeluaran-villa-puncak.csv'; a.click();
+};
+
+/* ---------- Tab menu ---------- */
+let curTab = 'rekap';
+try{ curTab = localStorage.getItem('vp_tab') || 'rekap'; }catch(e){}
+function applyTab(){
+  document.querySelectorAll('[data-tab]').forEach(el => el.classList.toggle('tabhide', el.dataset.tab !== curTab));
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.t === curTab));
+}
+$('tabs').onclick = e => {
+  const b = e.target.closest('.tab'); if (!b) return;
+  curTab = b.dataset.t;
+  try{ localStorage.setItem('vp_tab', curTab); }catch(e){}
+  applyTab();
+};
+
+/* ---------- Pemasukan (iuran) ---------- */
+let editInId = null;
+function renderIncomeTable(){
+  const rows = [...(state.incomes || [])].sort((a,b)=> b.tanggal.localeCompare(a.tanggal));
+  $('tbodyIn').innerHTML = rows.length ? rows.map(x => `
+    <tr>
+      <td>${esc(fmtDate(x.tanggal))}</td>
+      <td>${esc(x.nama)}</td>
+      <td class="hide-m">${esc(x.keterangan || '')}</td>
+      <td class="num">${rp(x.jumlah)}</td>
+      <td class="admin-only acts ${isAdmin() ? '' : 'hide'}">
+        <button class="ghost small" data-iedit="${esc(x.id)}">✎</button>
+        <button class="danger small" data-idel="${esc(x.id)}">🗑</button>
+      </td>
+    </tr>`).join('')
+    : `<tr><td colspan="5" class="empty">Belum ada uang masuk.</td></tr>`;
+}
+$('iJumlah').addEventListener('input', e => {
+  const n = e.target.value.replace(/\D/g,'');
+  e.target.value = n ? Number(n).toLocaleString('id-ID') : '';
+});
+function resetIncomeForm(){
+  editInId = null; $('iForm').reset(); $('iTanggal').value = new Date().toISOString().slice(0,10);
+  $('iFormTitle').textContent = 'Catat uang masuk'; $('iBtnSave').textContent = 'Simpan';
+}
+$('iBtnCancel').onclick = resetIncomeForm;
+$('iForm').onsubmit = async e => {
+  e.preventDefault();
+  const item = {
+    id: editInId,
+    tanggal: $('iTanggal').value,
+    nama: $('iNama').value.trim(),
+    keterangan: $('iKet').value.trim(),
+    jumlah: Number($('iJumlah').value.replace(/\D/g,''))
+  };
+  if (!item.jumlah) return toast('Jumlah harus diisi', true);
+  $('iBtnSave').disabled = true;
+  try{
+    await apiWrite({ action: editInId ? 'updateIncome' : 'addIncome', item });
+    await apiLoad(); resetIncomeForm(); render(); toast('Uang masuk tersimpan ✓');
+  }catch(err){ toast(err.message, true); }
+  finally{ $('iBtnSave').disabled = false; }
+};
+$('tbodyIn').onclick = async e => {
+  const ed = e.target.closest('[data-iedit]'), del = e.target.closest('[data-idel]');
+  if (ed){
+    const x = state.incomes.find(i => i.id === ed.dataset.iedit); if (!x) return;
+    editInId = x.id;
+    $('iTanggal').value = x.tanggal; $('iNama').value = x.nama; $('iKet').value = x.keterangan || '';
+    $('iJumlah').value = x.jumlah.toLocaleString('id-ID');
+    $('iFormTitle').textContent = 'Edit uang masuk'; $('iBtnSave').textContent = 'Update';
+    $('iFormCard').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+  if (del){
+    const x = state.incomes.find(i => i.id === del.dataset.idel); if (!x) return;
+    if (!confirm(`Hapus setoran ${x.nama} (${rp(x.jumlah)})?`)) return;
+    try{ await apiWrite({ action:'deleteIncome', id:x.id }); await apiLoad(); render(); toast('Dihapus'); }
+    catch(err){ toast(err.message, true); }
+  }
+};
+
+/* ---------- Init ---------- */
+(async function init(){
+  resetIncomeForm(); applyTab();
+  resetForm();
+  // tampilkan data tersimpan dulu; kalau belum ada, tampilkan teks "Memuat data…"
+  let cached = false;
+  if (!DEMO){
+    try{
+      const c = JSON.parse(localStorage.getItem('vp_cache') || 'null');
+      if (c){ state = { peserta: 0, incomes: [], ...c }; render(); cached = true; }
+    }catch(e){}
+  }
+  if (!cached){
+    $('tbody').innerHTML = '<tr><td colspan="6" class="empty">Memuat data…</td></tr>';
+    $('tbodyIn').innerHTML = '<tr><td colspan="5" class="empty">Memuat data…</td></tr>';
+    ['byCat','byPayer','byContrib'].forEach(id => $(id).innerHTML = '<div class="sub">Memuat data…</div>');
+  }
+  try{ await apiLoad(); }catch(e){ toast('Gagal memuat data: ' + e.message, true); }
+  render();
+})();
+</script>
+</body>
+</html>
